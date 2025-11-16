@@ -1,19 +1,33 @@
-const Anthropic = require('@anthropic-ai/sdk');
+require('dotenv').config();
 const fs = require('fs').promises;
+const AIProviderFactory = require('./ai-providers');
 
 /**
  * 知乎回答价值分析器
- * 使用Claude API分析回答的价值，找出最有价值的回答
+ * 支持多种 AI 服务（Claude、Gemini）分析回答价值
  */
 class AnswerAnalyzer {
-  constructor(apiKey = process.env.ANTHROPIC_API_KEY) {
-    if (!apiKey) {
-      throw new Error('未设置ANTHROPIC_API_KEY环境变量');
+  constructor(aiProvider = null) {
+    // 如果没有提供 AI 提供商，从环境变量创建
+    if (aiProvider) {
+      this.aiProvider = aiProvider;
+    } else {
+      try {
+        this.aiProvider = AIProviderFactory.createFromEnv();
+      } catch (error) {
+        console.error('初始化 AI 提供商失败:', error.message);
+        throw error;
+      }
     }
 
-    this.client = new Anthropic({ apiKey });
     this.answers = [];
     this.analysisResults = [];
+
+    console.log(`使用 AI 提供商: ${this.aiProvider.getName()}`);
+    const modelInfo = this.aiProvider.getModelInfo();
+    if (modelInfo.model) {
+      console.log(`模型: ${modelInfo.model}`);
+    }
   }
 
   /**
@@ -38,75 +52,11 @@ class AnswerAnalyzer {
    * 分析单个回答的价值
    */
   async analyzeAnswer(answer) {
-    const prompt = `请分析以下知乎回答的价值。从以下维度评分（每项1-10分）：
-
-1. **深度**: 分析是否深入，是否有独到见解
-2. **准确性**: 内容是否准确可靠，是否有事实依据
-3. **实用性**: 对读者是否有实际帮助和指导意义
-4. **完整性**: 是否全面回答了问题，论述是否完整
-5. **表达质量**: 逻辑是否清晰，表达是否流畅
-
-【回答内容】
-作者: ${answer.author}
-点赞数: ${answer.voteCount}
-评论数: ${answer.commentCount}
-发布时间: ${answer.timeText}
-
-内容:
-${answer.content}
-
-请返回JSON格式的评分结果，格式如下：
-{
-  "depth": 分数,
-  "accuracy": 分数,
-  "practicality": 分数,
-  "completeness": 分数,
-  "expressionQuality": 分数,
-  "totalScore": 总分,
-  "summary": "一句话总结这个回答的核心价值",
-  "strengths": ["优点1", "优点2"],
-  "weaknesses": ["缺点1", "缺点2"]
-}`;
-
     try {
-      const message = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      });
-
-      // 解析响应
-      const responseText = message.content[0].text;
-
-      // 尝试提取JSON
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const analysis = JSON.parse(jsonMatch[0]);
-        return analysis;
-      } else {
-        throw new Error('无法从响应中提取JSON');
-      }
-
+      return await this.aiProvider.analyzeAnswer(answer);
     } catch (error) {
       console.error(`分析回答时出错:`, error.message);
-      // 返回默认评分
-      return {
-        depth: 5,
-        accuracy: 5,
-        practicality: 5,
-        completeness: 5,
-        expressionQuality: 5,
-        totalScore: 25,
-        summary: '分析失败',
-        strengths: [],
-        weaknesses: [],
-        error: error.message
-      };
+      return this.aiProvider.getDefaultAnalysis(error.message);
     }
   }
 
@@ -163,7 +113,8 @@ ${answer.content}
     let report = '# 知乎回答价值分析报告\n\n';
     report += `分析时间: ${new Date().toLocaleString('zh-CN')}\n`;
     report += `总回答数: ${this.answers.length}\n`;
-    report += `已分析数: ${this.analysisResults.length}\n\n`;
+    report += `已分析数: ${this.analysisResults.length}\n`;
+    report += `AI 提供商: ${this.aiProvider.getName()}\n\n`;
 
     report += '## 最有价值的回答 TOP 10\n\n';
 

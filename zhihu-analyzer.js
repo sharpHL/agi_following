@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+require('dotenv').config();
+
 const ZhihuScraper = require('./zhihu-scraper');
 const AnswerAnalyzer = require('./answer-analyzer');
 const fs = require('fs').promises;

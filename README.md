@@ -1,14 +1,16 @@
 # 知乎问题回答分析工具
 
-一个强大的工具，用于爬取知乎问题下的所有回答，并使用 Claude AI 分析找出最有价值的回答。
+一个强大的工具，用于爬取知乎问题下的所有回答，并使用 AI（Claude 或 Gemini）分析找出最有价值的回答。
 
 ## ✨ 功能特性
 
 - 🕷️ **完整爬取**: 使用 Playwright 模拟真实浏览器，爬取问题下的所有回答
+- 🔐 **登录支持**: Cookie 管理，确保获取完整内容
 - ⏰ **时间排序**: 自动按发布时间倒序排列回答
-- 🤖 **AI 分析**: 使用 Claude AI 从多个维度评估回答价值
+- 🤖 **多 AI 支持**: 支持 Claude 和 Gemini 两种 AI 服务，可自由切换
 - 📊 **详细报告**: 生成包含评分、优缺点分析的 Markdown 报告
 - 💾 **数据保存**: 保存原始数据和分析结果，方便后续使用
+- ⚙️ **环境配置**: 使用 dotenv 管理 API 密钥
 
 ## 🎯 评分维度
 
@@ -23,7 +25,9 @@ AI 会从以下 5 个维度对每个回答进行评分（每项 1-10 分）：
 ## 📋 前置要求
 
 - Node.js >= 18.0.0
-- Anthropic API Key（Claude API）
+- AI API Key（以下任选其一）
+  - Claude API Key（从 [Anthropic Console](https://console.anthropic.com/) 获取）
+  - Gemini API Key（从 [Google AI Studio](https://aistudio.google.com/app/apikey) 获取）
 
 ## 🚀 快速开始
 
@@ -41,17 +45,39 @@ npm run install-browsers
 
 ### 3. 配置 API Key
 
-创建 `.env` 文件并添加你的 Claude API Key：
+创建 `.env` 文件并配置 AI 服务：
 
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填入你的 API Key
+# 编辑 .env 文件
 ```
 
-或者直接设置环境变量：
+**方式一：使用 Claude（推荐）**
+
+在 `.env` 文件中设置：
+```bash
+AI_PROVIDER=claude
+ANTHROPIC_API_KEY=your-claude-api-key-here
+```
+
+**方式二：使用 Gemini（免费额度更多）**
+
+在 `.env` 文件中设置：
+```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key-here
+```
+
+也可以直接设置环境变量：
 
 ```bash
-export ANTHROPIC_API_KEY=your-api-key-here
+# 使用 Claude
+export AI_PROVIDER=claude
+export ANTHROPIC_API_KEY=your-key
+
+# 或使用 Gemini
+export AI_PROVIDER=gemini
+export GEMINI_API_KEY=your-key
 ```
 
 ### 4. 登录知乎（可选但强烈推荐）
