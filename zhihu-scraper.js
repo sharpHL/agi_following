@@ -92,10 +92,32 @@ class ZhihuScraper {
 
       console.log('开始获取回答...');
 
-      // 等待回答列表加载
-      await this.page.waitForSelector('.List-item', { timeout: 10000 }).catch(() => {
-        console.log('未找到回答列表，可能页面结构已变化或无回答');
-      });
+      // 尝试多个可能的选择器
+      const possibleSelectors = [
+        '.List-item',
+        '.AnswerItem',
+        '.ContentItem',
+        'article[class*="Answer"]',
+        '[itemprop="answer"]'
+      ];
+
+      let foundSelector = null;
+      for (const selector of possibleSelectors) {
+        try {
+          await this.page.waitForSelector(selector, { timeout: 5000 });
+          foundSelector = selector;
+          console.log(`✓ 找到回答列表（选择器: ${selector}）`);
+          break;
+        } catch (e) {
+          // 继续尝试下一个选择器
+        }
+      }
+
+      if (!foundSelector) {
+        console.log('⚠ 警告：使用所有已知选择器都未找到回答列表');
+        console.log('页面可能需要登录，或者结构已变化');
+        console.log('提示：运行 node debug-zhihu.js 进行详细诊断');
+      }
 
       // 滚动加载所有回答
       await this.scrollToLoadAll();
@@ -161,7 +183,24 @@ class ZhihuScraper {
     console.log('开始提取回答数据...');
 
     this.answers = await this.page.evaluate(() => {
-      const answerElements = document.querySelectorAll('.List-item');
+      // 尝试多个可能的选择器
+      const possibleSelectors = [
+        '.List-item',
+        '.AnswerItem',
+        '.ContentItem',
+        'article[class*="Answer"]',
+        '[itemprop="answer"]'
+      ];
+
+      let answerElements = [];
+      for (const selector of possibleSelectors) {
+        answerElements = document.querySelectorAll(selector);
+        if (answerElements.length > 0) {
+          console.log(`使用选择器: ${selector}，找到 ${answerElements.length} 个元素`);
+          break;
+        }
+      }
+
       const answers = [];
 
       answerElements.forEach((element, index) => {
