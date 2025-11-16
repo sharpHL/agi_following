@@ -54,11 +54,34 @@ cp .env.example .env
 export ANTHROPIC_API_KEY=your-api-key-here
 ```
 
-### 4. 运行分析
+### 4. 登录知乎（可选但强烈推荐）
+
+⚠️ **重要**：知乎需要登录才能查看完整内容，未登录可能只能看到部分回答。
+
+**方式一：使用自动登录工具（推荐）**
+
+```bash
+npm run login
+# 或
+node login-zhihu.js
+```
+
+工具会打开浏览器，你需要：
+1. 在浏览器中完成登录
+2. 按回车键保存 Cookie
+3. 工具会自动测试 Cookie 是否有效
+
+**方式二：手动导出 Cookie**
+
+查看详细说明：[COOKIE_GUIDE.md](./COOKIE_GUIDE.md)
+
+### 5. 运行分析
 
 ```bash
 node zhihu-analyzer.js https://www.zhihu.com/question/490365386
 ```
+
+如果已登录，你会看到 `✓ 已登录状态` 提示。
 
 ## 📖 使用方法
 
@@ -184,10 +207,13 @@ model: 'claude-3-5-sonnet-20241022',  // 可改为其他模型
 
 ## ⚠️ 注意事项
 
-1. **API 成本**: 每个回答的分析会调用一次 Claude API，建议使用 `--max-analyze` 限制分析数量
-2. **爬取速度**: 为避免被反爬虫，程序会适当延迟，完整爬取可能需要几分钟
-3. **网络稳定性**: 需要稳定的网络连接访问知乎和 Claude API
-4. **合规使用**: 请遵守知乎的服务条款，仅用于个人研究和学习
+1. **登录状态**: 强烈建议先登录知乎（`npm run login`），否则可能只能看到部分回答
+2. **Cookie 安全**: Cookie 包含登录凭证，不要分享或提交到版本控制（已在 .gitignore 中）
+3. **Cookie 过期**: Cookie 会过期（通常几天到几周），过期后需要重新登录
+4. **API 成本**: 每个回答的分析会调用一次 Claude API，建议使用 `--max-analyze` 限制分析数量
+5. **爬取速度**: 为避免被反爬虫，程序会适当延迟，完整爬取可能需要几分钟
+6. **网络稳定性**: 需要稳定的网络连接访问知乎和 Claude API
+7. **合规使用**: 请遵守知乎的服务条款，仅用于个人研究和学习
 
 ## 🐛 故障排除
 
@@ -210,6 +236,26 @@ npm run install-browsers
 - 检查知乎链接是否正确
 - 确认页面是否可以正常访问
 - 可能需要添加延迟或调整爬取参数
+
+### 登录相关问题
+
+**提示"未登录状态"：**
+```bash
+# 重新登录
+npm run login
+```
+
+**Cookie 过期：**
+```bash
+# 清除旧 Cookie 并重新登录
+rm .zhihu-cookies.json
+npm run login
+```
+
+**无法看到完整回答：**
+- 确保已经登录（运行 `npm run login`）
+- 检查 `.zhihu-cookies.json` 文件是否存在
+- 查看详细说明：[COOKIE_GUIDE.md](./COOKIE_GUIDE.md)
 
 ## 📝 示例输出
 

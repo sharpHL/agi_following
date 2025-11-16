@@ -5,6 +5,10 @@ package-lock.json
 # Environment variables
 .env
 
+# Cookie files (contains login credentials)
+.zhihu-cookies.json
+*.cookies.json
+
 # Output files
 output/
 zhihu_answers.json

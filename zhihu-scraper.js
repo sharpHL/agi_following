@@ -1,16 +1,20 @@
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
+const CookieManager = require('./cookie-manager');
 
 /**
  * 知乎问题回答爬虫
  * 使用Playwright模拟真实浏览器，抓取问题下的所有回答
  */
 class ZhihuScraper {
-  constructor(questionUrl) {
+  constructor(questionUrl, options = {}) {
     this.questionUrl = questionUrl;
     this.browser = null;
+    this.context = null;
     this.page = null;
     this.answers = [];
+    this.cookieManager = new CookieManager(options.cookieFile);
+    this.useCookies = options.useCookies !== false; // 默认使用cookie
   }
 
   /**
@@ -23,17 +27,49 @@ class ZhihuScraper {
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
-    this.page = await this.browser.newPage();
+    // 创建浏览器上下文
+    this.context = await this.browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      viewport: { width: 1920, height: 1080 }
+    });
 
-    // 设置User-Agent，模拟真实浏览器
-    await this.page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    );
+    // 加载并应用 Cookie（如果启用）
+    if (this.useCookies) {
+      const cookies = await this.cookieManager.loadCookies();
+      if (cookies.length > 0) {
+        await this.cookieManager.applyCookiesToContext(this.context, cookies);
+      }
+    }
 
-    // 设置视口大小
-    await this.page.setViewportSize({ width: 1920, height: 1080 });
+    // 创建页面
+    this.page = await this.context.newPage();
 
     console.log('浏览器启动成功');
+  }
+
+  /**
+   * 检查登录状态
+   */
+  async checkLoginStatus() {
+    try {
+      const isLoggedIn = await this.page.evaluate(() => {
+        const userMenu = document.querySelector('.AppHeader-profileAvatar');
+        const userLink = document.querySelector('.AppHeader-userInfo');
+        return !!(userMenu || userLink);
+      });
+
+      if (isLoggedIn) {
+        console.log('✓ 已登录状态');
+      } else {
+        console.log('⚠ 未登录状态（可能看不到全部回答）');
+        console.log('提示：运行 node login-zhihu.js 来登录');
+      }
+
+      return isLoggedIn;
+    } catch (error) {
+      console.log('无法检测登录状态');
+      return false;
+    }
   }
 
   /**
@@ -49,7 +85,12 @@ class ZhihuScraper {
         timeout: 60000
       });
 
-      console.log('页面加载完成，开始获取回答...');
+      console.log('页面加载完成');
+
+      // 检查登录状态
+      await this.checkLoginStatus();
+
+      console.log('开始获取回答...');
 
       // 等待回答列表加载
       await this.page.waitForSelector('.List-item', { timeout: 10000 }).catch(() => {
