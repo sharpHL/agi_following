@@ -24,13 +24,19 @@ class ZhihuScraper {
     console.log('启动浏览器...');
     this.browser = await chromium.launch({
       headless: true, // 无头模式，提高性能
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--ignore-certificate-errors',  // 忽略证书错误，修复网络异常
+        '--disable-dev-shm-usage'
+      ]
     });
 
     // 创建浏览器上下文
     this.context = await this.browser.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      viewport: { width: 1920, height: 1080 }
+      viewport: { width: 1920, height: 1080 },
+      ignoreHTTPSErrors: true  // 忽略HTTPS错误，修复SSL证书问题
     });
 
     // 加载并应用 Cookie（如果启用）
@@ -81,8 +87,8 @@ class ZhihuScraper {
     try {
       // 访问页面，等待网络空闲
       await this.page.goto(this.questionUrl, {
-        waitUntil: 'networkidle',
-        timeout: 60000
+        waitUntil: 'domcontentloaded',  // 改用 domcontentloaded，更可靠
+        timeout: 90000  // 增加超时到90秒
       });
 
       console.log('页面加载完成');

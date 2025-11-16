@@ -279,6 +279,34 @@ model: 'claude-3-5-sonnet-20241022',  // 可改为其他模型
 
 ## 🐛 故障排除
 
+### 网络异常 / SSL证书错误 ⚡
+
+**症状：**
+```
+net::ERR_CERT_AUTHORITY_INVALID
+TimeoutError: page.goto: Timeout exceeded
+```
+
+**解决方案：**
+
+1. **测试网络连接**
+   ```bash
+   npm run test-network
+   ```
+
+2. **已自动修复**
+   - 所有工具已自动忽略SSL证书错误
+   - 增加了超时时间
+   - 优化了页面加载策略
+
+3. **如果仍然失败，使用本地HTML解析（推荐）**
+   ```bash
+   # 在浏览器中手动保存页面，然后：
+   npm run parse-html <文件名>
+   ```
+
+详细说明：[NETWORK_FIX.md](./NETWORK_FIX.md)
+
 ### 浏览器启动失败
 
 ```bash

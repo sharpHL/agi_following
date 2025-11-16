@@ -17,12 +17,18 @@ async function debugZhihu() {
 
   const browser = await chromium.launch({
     headless: false,  // 显示浏览器，方便观察
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--ignore-certificate-errors',  // 忽略证书错误，修复网络异常
+      '--disable-dev-shm-usage'
+    ]
   });
 
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    viewport: { width: 1920, height: 1080 }
+    viewport: { width: 1920, height: 1080 },
+    ignoreHTTPSErrors: true  // 忽略HTTPS错误，修复SSL证书问题
   });
 
   // 加载 Cookie
@@ -37,8 +43,8 @@ async function debugZhihu() {
   try {
     console.log('1️⃣  访问页面...');
     await page.goto(questionUrl, {
-      waitUntil: 'networkidle',
-      timeout: 60000
+      waitUntil: 'domcontentloaded',  // 改用 domcontentloaded，更可靠
+      timeout: 90000  // 增加超时到90秒
     });
 
     console.log('✓ 页面加载完成\n');
