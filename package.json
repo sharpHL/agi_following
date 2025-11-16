@@ -11,6 +11,7 @@
     "test-scraper": "node test-scraper.js",
     "parse-html": "node parse-local-html.js",
     "debug": "node debug-zhihu.js",
+    "diagnose": "node diagnose-cookies.js",
     "install-browsers": "npx playwright install chromium"
   },
   "keywords": [

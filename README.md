@@ -123,6 +123,20 @@ node login-zhihu.js
 
 查看详细说明：[COOKIE_GUIDE.md](./COOKIE_GUIDE.md)
 
+**遇到 Cookie 问题？**
+
+如果 Cookie 登录失败，使用诊断工具：
+
+```bash
+# 诊断 Cookie 问题
+npm run diagnose
+
+# 清理无效 Cookie（自动过滤非知乎/过期的 Cookie）
+npm run diagnose -- --cleanup
+```
+
+详细说明见：[COOKIE_FIX_GUIDE.md](./COOKIE_FIX_GUIDE.md)
+
 ### 5. 运行分析
 
 ```bash
@@ -299,6 +313,17 @@ npm run login
 rm .zhihu-cookies.json
 npm run login
 ```
+
+**Cookie 数量过多或无效：**
+```bash
+# 诊断 Cookie 问题
+npm run diagnose
+
+# 自动清理无效 Cookie
+npm run diagnose -- --cleanup
+```
+
+详细说明：[COOKIE_FIX_GUIDE.md](./COOKIE_FIX_GUIDE.md)
 
 **无法看到完整回答：**
 - 确保已经登录（运行 `npm run login`）

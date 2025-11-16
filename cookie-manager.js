@@ -63,18 +63,79 @@ class CookieManager {
   }
 
   /**
+   * 过滤和清理 Cookie
+   * 只保留知乎相关的、有效的 Cookie
+   */
+  filterCookies(cookies) {
+    const now = Date.now() / 1000;
+
+    return cookies.filter(cookie => {
+      // 1. 必须是知乎的 Cookie
+      const isZhihu = cookie.domain && (
+        cookie.domain.includes('zhihu.com') ||
+        cookie.domain === '.zhihu.com' ||
+        cookie.domain === 'www.zhihu.com'
+      );
+
+      if (!isZhihu) {
+        return false;
+      }
+
+      // 2. 检查是否过期
+      if (cookie.expires && cookie.expires > 0 && cookie.expires < now) {
+        console.log(`  跳过过期 Cookie: ${cookie.name}`);
+        return false;
+      }
+
+      // 3. 必须有值
+      if (!cookie.value || cookie.value.trim() === '') {
+        console.log(`  跳过空 Cookie: ${cookie.name}`);
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
    * 将 Cookie 应用到浏览器 context
    */
   async applyCookiesToContext(context, cookies = null) {
     try {
-      const cookiesToApply = cookies || this.cookies;
+      let cookiesToApply = cookies || this.cookies;
+
       if (cookiesToApply.length === 0) {
         console.log('无可用 Cookie');
         return false;
       }
 
+      // 过滤和清理 Cookie
+      cookiesToApply = this.filterCookies(cookiesToApply);
+
+      if (cookiesToApply.length === 0) {
+        console.log('⚠️  所有 Cookie 都已过期或无效');
+        console.log('请运行: node login-zhihu.js 重新登录');
+        return false;
+      }
+
+      // 检查关键 Cookie
+      const hasZ_c0 = cookiesToApply.some(c => c.name === 'z_c0');
+      if (!hasZ_c0) {
+        console.log('⚠️  缺少关键 Cookie: z_c0');
+        console.log('Cookie 可能无效，建议重新登录');
+      }
+
       await context.addCookies(cookiesToApply);
-      console.log(`✓ 已应用 ${cookiesToApply.length} 个 Cookie`);
+      console.log(`✓ 已应用 ${cookiesToApply.length} 个有效 Cookie`);
+
+      // 显示关键 Cookie
+      const keyCookies = cookiesToApply.filter(c =>
+        ['z_c0', '_zap', 'd_c0', '_xsrf'].includes(c.name)
+      );
+      if (keyCookies.length > 0) {
+        console.log(`  关键 Cookie: ${keyCookies.map(c => c.name).join(', ')}`);
+      }
+
       return true;
     } catch (error) {
       console.error('应用 Cookie 失败:', error.message);
